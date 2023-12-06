@@ -1,12 +1,31 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-export default function FormComments() {
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+type Props = {
+	postId: string;
+};
+
+export default function FormComments({ postId }: Props) {
+	const { data } = useSession();
+	const router = useRouter();
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const comment = formData.get("comment");
-		console.log(comment);
-		e.currentTarget.reset();
+		try {
+			const formData = new FormData(e.currentTarget);
+			const comment = formData.get("comment");
+			await fetch("/api/comments", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ postId, content: comment }),
+			});
+
+			router.refresh();
+		} catch (error) {
+			console.log(error);
+		}
 	};
 
 	return (
@@ -29,6 +48,7 @@ export default function FormComments() {
 				 	text-white font-bold py-2 px-4 rounded-md mt-2
 				 	disabled:bg-gray-400"
 					type="submit"
+					disabled={!data?.user?.email}
 				>
 					Submit Comment
 				</button>

@@ -1,31 +1,34 @@
 "use client";
 
 import ReactTextareaAutosize from "react-textarea-autosize";
-import { ChangeEvent, useState } from "react";
-import { FormData } from "@/types/blogs";
+import { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 export default function FormNewPost() {
-	const [formData, setFormData] = useState<FormData>({
-		title: "",
-		content: "",
-	});
-
+	const router = useRouter();
 	const inputClass =
 		"w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring focus:border-blue-300";
 
-	const hanfleChange = (
-		e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-	) => {
+	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const { name, value } = e.target;
-		setFormData({ ...formData, [name]: value });
-	};
+		try {
+			const formData = new FormData(e.currentTarget);
+			const title = formData.get("title");
+			const content = formData.get("content");
 
-	const handleSubmit = (e: ChangeEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		console.log(formData);
+			const response = await fetch("/api/posts", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ title, content }),
+			});
+			const data = await response.json();
+			router.push(`/blogs/${data.id}`);
+		} catch (error) {
+			console.log(error);
+		}
 	};
-
 	return (
 		<form className="max-w-md mx-auto p-4" onSubmit={handleSubmit}>
 			<div className="mb-4">
@@ -34,8 +37,6 @@ export default function FormNewPost() {
 					className={inputClass}
 					placeholder="Blog title"
 					name="title"
-					value={formData.title}
-					onChange={(e) => hanfleChange(e)}
 				/>
 			</div>
 			<div className="mb-4">
@@ -44,8 +45,6 @@ export default function FormNewPost() {
 					name="content"
 					className={inputClass}
 					placeholder="Blog content"
-					value={formData.content}
-					onChange={(e) => hanfleChange(e)}
 				/>
 			</div>
 			<button
